@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luyện Từ Vựng N2 - Sakura Theme</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        body {
+            /* Hình nền cây hoa anh đào dịu mắt */
+            background: linear-gradient(rgba(255, 245, 247, 0.55), rgba(240, 220, 225, 0.65)),
+                        url('https://images.unsplash.com/photo-1522383225653-ed111181a951?q=80&w=1920&auto=format&fit=crop') center/cover no-repeat fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Hiệu ứng Cánh hoa anh đào rơi */
+        .sakura-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        .petal {
+            position: absolute;
+            background: #ffb7c5;
+            border-radius: 15px 0 15px 0;
+            opacity: 0.75;
+            filter: drop-shadow(0 2px 4px rgba(216, 90, 127, 0.2));
+            animation: fall linear infinite;
+        }
+        @keyframes fall {
+            0% { transform: translate(0, -10px) rotate(0deg); opacity: 0.8; }
+            100% { transform: translate(120px, 105vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* Khung chứa bài học (Làm mờ nền kính Glassmorphism) */
+        .app-card {
+            position: relative;
+            z-index: 2;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            width: 100%;
+            max-width: 440px;
+            border-radius: 28px;
+            padding: 32px 28px;
+            border: 1.5px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 20px 40px rgba(180, 100, 120, 0.15);
+            text-align: center;
+        }
+
+        /* Nút chuyển chế độ */
+        .mode-switch { display: flex; background: #f7ebeb; padding: 4px; border-radius: 14px; margin-bottom: 22px; }
+        .mode-btn {
+            flex: 1; padding: 8px; border: none; background: transparent; font-size: 13px; font-weight: 600;
+            color: #9c6875; border-radius: 10px; cursor: pointer; transition: all 0.2s;
+        }
+        .mode-btn.active { background: #ffffff; color: #d85a7f; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+
+        .header { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #b06d7e; margin-bottom: 18px; }
+        .kanji-box { font-size: 40px; font-weight: 700; color: #3a2e30; margin-bottom: 6px; letter-spacing: 1px; }
+        .hiragana-badge {
+            display: inline-block; background: #fce8eb; color: #c05c7e; padding: 4px 18px;
+            border-radius: 20px; font-size: 14px; font-weight: 600; margin-bottom: 22px;
+            border: 1px dashed #f2b6c6;
+        }
+
+        /* Danh sách đáp án trắc nghiệm */
+        .options-grid { display: flex; flex-direction: column; gap: 10px; }
+        .opt-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1.5px solid #f2d5db;
+            color: #4a383b;
+            padding: 14px;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        .opt-btn:hover { background: #fff5f7; border-color: #d85a7f; transform: translateY(-1px); }
+        .opt-btn.correct { background: #e8f5e9 !important; border-color: #66bb6a !important; color: #2e7d32 !important; }
+        .opt-btn.wrong { background: #ffebee !important; border-color: #ef5350 !important; color: #c62828 !important; }
+
+        /* Ô Luyện gõ */
+        .type-container { display: none; flex-direction: column; gap: 12px; }
+        .type-input {
+            width: 100%; padding: 14px; border: 1.5px solid #f2d5db; border-radius: 16px;
+            font-size: 16px; text-align: center; outline: none; background: #ffffff;
+        }
+        .type-input:focus { border-color: #d85a7f; box-shadow: 0 0 0 3px rgba(216, 90, 127, 0.15); }
+        .submit-btn {
+            background: linear-gradient(135deg, #e07a9e 0%, #d85a7f 100%);
+            color: white; border: none; padding: 14px; border-radius: 16px;
+            font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .submit-btn:hover { opacity: 0.95; transform: translateY(-1px); }
+
+        .feedback { min-height: 24px; margin-top: 16px; font-size: 14px; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div class="sakura-container" id="sakura-box"></div>
+
+    <div class="app-card">
+        <!-- Chuyển chế độ -->
+        <div class="mode-switch">
+            <button class="mode-btn active" onclick="switchMode('quiz')">Trắc nghiệm</button>
+            <button class="mode-btn" onclick="switchMode('type')">Luyện gõ</button>
+        </div>
+
+        <!-- Thanh thông tin -->
+        <div class="header">
+            <span id="q-count">Câu 1 / 40</span>
+            <span id="score-count">Điểm: 0</span>
+        </div>
+
+        <!-- Từ vựng -->
+        <div class="kanji-box" id="kanji">人生</div>
+        <div class="hiragana-badge" id="hiragana">じんせい</div>
+
+        <!-- Chế độ Trắc nghiệm -->
+        <div class="options-grid" id="quiz-box">
+            <button class="opt-btn" onclick="checkQuiz(this)"></button>
+            <button class="opt-btn" onclick="checkQuiz(this)"></button>
+            <button class="opt-btn" onclick="checkQuiz(this)"></button>
+            <button class="opt-btn" onclick="checkQuiz(this)"></button>
+        </div>
+
+        <!-- Chế độ Luyện gõ -->
+        <div class="type-container" id="type-box">
+            <p style="font-size: 13px; color: #8c6e75;">Nhập nghĩa tiếng Việt hoặc Hiragana:</p>
+            <input type="text" class="type-input" id="type-input" placeholder="Gõ đáp án vào đây..." onkeydown="if(event.key==='Enter') checkType()">
+            <button class="submit-btn" onclick="checkType()">Kiểm tra</button>
+        </div>
+
+        <!-- Thông báo đúng/sai -->
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+        // Hiệu ứng Sakura rơi
+        function createPetal() {
+            const box = document.getElementById('sakura-box');
+            const p = document.createElement('div');
+            p.classList.add('petal');
+            p.style.width = Math.random() * 8 + 8 + 'px';
+            p.style.height = Math.random() * 10 + 10 + 'px';
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.animationDuration = Math.random() * 4 + 6 + 's';
+            box.appendChild(p);
+            setTimeout(() => p.remove(), 10000);
+        }
+        setInterval(createPetal, 400);
+
+        // Danh sách 40 từ vựng Mimi Kara Oboeru N2 (Trích từ tài liệu)
+        const vocabList = [
+            { kanji: '人生', hiragana: 'じんせい', meaning: 'Cuộc đời' },
+            { kanji: '人間', hiragana: 'にんげん', meaning: 'Con người' },
+            { kanji: '人', hiragana: 'ひと', meaning: 'Người' },
+            { kanji: '祖先', hiragana: 'そせん', meaning: 'Tổ tiên' },
+            { kanji: '親戚', hiragana: 'しんせき', meaning: 'Họ hàng' },
+            { kanji: '夫婦', hiragana: 'ふうふ', meaning: 'Vợ chồng' },
+            { kanji: '長男', hiragana: 'ちょうなん', meaning: 'Con trai cả' },
+            { kanji: '主人', hiragana: 'しゅじん', meaning: 'Chồng / Trưởng phòng / Ông chủ' },
+            { kanji: '双子', hiragana: 'ふたご', meaning: 'Sinh đôi' },
+            { kanji: '迷子', hiragana: 'まいご', meaning: 'Trẻ lạc' },
+            { kanji: '他人', hiragana: 'たにん', meaning: 'Người khác / Người lạ' },
+            { kanji: '敵', hiragana: 'てき', meaning: 'Kẻ thù / Địch' },
+            { kanji: '味方', hiragana: 'みかた', meaning: 'Đồng minh / Bạn bè' },
+            { kanji: '筆者', hiragana: 'ひっしゃ', meaning: 'Tác giả' },
+            { kanji: '寿命', hiragana: 'じゅみょう', meaning: 'Tuổi thọ' },
+            { kanji: '将来', hiragana: 'しょうらい', meaning: 'Tương lai' },
+            { kanji: '才能', hiragana: 'さいのう', meaning: 'Tài năng' },
+            { kanji: '能力', hiragana: 'のうりょく', meaning: 'Năng lực' },
+            { kanji: '長所', hiragana: 'ちょうしょ', meaning: 'Sở trường / Điểm mạnh' },
+            { kanji: '個性', hiragana: 'こせい', meaning: 'Cá tính' },
+            { kanji: '遺伝', hiragana: 'いでん', meaning: 'Di truyền' },
+            { kanji: '動作', hiragana: 'どうさ', meaning: 'Động tác' },
+            { kanji: '真似', hiragana: 'まね', meaning: 'Bắt chước' },
+            { kanji: '睡眠', hiragana: 'すいみん', meaning: 'Giấc ngủ' },
+            { kanji: '食欲', hiragana: 'しょくよく', meaning: 'Thèm ăn' },
+            { kanji: '外食', hiragana: 'がいしょく', meaning: 'Ăn ngoài' },
+            { kanji: '家事', hiragana: 'かじ', meaning: 'Việc nhà' },
+            { kanji: '出産', hiragana: 'しゅっさん', meaning: 'Sinh đẻ' },
+            { kanji: '介護', hiragana: 'かいご', meaning: 'Chăm sóc / Chăm nom' },
+            { kanji: '共働き', hiragana: 'ともばたらき', meaning: 'Cả hai vợ chồng cùng đi làm' },
+            { kanji: '出勤', hiragana: 'しゅっきん', meaning: 'Đi làm' },
+            { kanji: '出世', hiragana: 'しゅっせ', meaning: 'Thăng tiến / Thành đạt' },
+            { kanji: '地位', hiragana: 'ちい', meaning: 'Địa vị' },
+            { kanji: '受験', hiragana: 'じゅけん', meaning: 'Dự thi' },
+            { kanji: '専攻', hiragana: 'せんこう', meaning: 'Chuyên ngành' },
+            { kanji: '支度', hiragana: 'したく', meaning: 'Sửa soạn / Chuẩn bị' },
+            { kanji: '全身', hiragana: 'ぜんしん', meaning: 'Toàn thân' },
+            { kanji: '皺', hiragana: 'しわ', meaning: 'Nếp nhăn' },
+            { kanji: '服装', hiragana: 'ふくそう', meaning: 'Trang phục' },
+            { kanji: '礼', hiragana: 'れい', meaning: 'Cảm ơn / Cúi chào / Lễ nghi' }
+        ];
+
+        let current = 0, score = 0, mode = 'quiz', canClick = true;
+
+        function init() {
+            document.getElementById('q-count').innerText = `Câu ${current + 1} / ${vocabList.length}`;
+            document.getElementById('score-count').innerText = `Điểm: ${score}`;
+            document.getElementById('kanji').innerText = vocabList[current].kanji;
+            document.getElementById('hiragana').innerText = vocabList[current].hiragana;
+            document.getElementById('feedback').innerText = '';
+            document.getElementById('type-input').value = '';
+            canClick = true;
+
+            // Xáo trộn đáp án trắc nghiệm
+            let opts = [vocabList[current].meaning];
+            while(opts.length < 4) {
+                let rand = vocabList[Math.floor(Math.random()*vocabList.length)].meaning;
+                if(!opts.includes(rand)) opts.push(rand);
+            }
+            opts.sort(() => Math.random() - 0.5);
+            const btns = document.querySelectorAll('.opt-btn');
+            btns.forEach((btn, i) => {
+                btn.innerText = opts[i];
+                btn.className = 'opt-btn';
+            });
+        }
+
+        function switchMode(m) {
+            mode = m;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('quiz-box').style.display = m === 'quiz' ? 'flex' : 'none';
+            document.getElementById('type-box').style.display = m === 'type' ? 'flex' : 'none';
+            init();
+        }
+
+        function checkQuiz(btn) {
+            if(!canClick) return; canClick = false;
+            if(btn.innerText === vocabList[current].meaning) {
+                btn.classList.add('correct'); score += 10;
+            } else {
+                btn.classList.add('wrong');
+            }
+            setTimeout(nextQuestion, 1000);
+        }
+
+        function checkType() {
+            if(!canClick) return;
+            const val = document.getElementById('type-input').value.trim().toLowerCase();
+            const correctMeaning = vocabList[current].meaning.toLowerCase();
+            const correctHira = vocabList[current].hiragana;
+
+            if(val === correctMeaning || val === correctHira) {
+                document.getElementById('feedback').innerText = "✓ Chính xác!";
+                document.getElementById('feedback').style.color = "#4caf50";
+                score += 10; canClick = false;
+                setTimeout(nextQuestion, 1000);
+            } else {
+                document.getElementById('feedback').innerText = `✕ Đáp án đúng: ${vocabList[current].meaning}`;
+                document.getElementById('feedback').style.color = "#ef5350";
+            }
+        }
+
+        function nextQuestion() {
+            current = (current + 1) % vocabList.length;
+            init();
+        }
+
+        init();
+    </script>
+</body>
+</html>
